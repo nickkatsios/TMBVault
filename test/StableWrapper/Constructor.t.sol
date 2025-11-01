@@ -11,7 +11,6 @@ contract StableWrapperConstructorTest is Base {
         assertEq(stableWrapper.symbol(), "wUSDC");
         assertEq(stableWrapper.decimals(), 6);
         assertEq(stableWrapper.totalSupply(), 0);
-        assertEq(address(stableWrapper.endpoint()), address(endpoints[1]));
         assertEq(stableWrapper.owner(), owner);
         assertEpoch(1);
     }

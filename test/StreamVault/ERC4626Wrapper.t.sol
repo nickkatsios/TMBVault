@@ -5,11 +5,13 @@ import {Base} from "./Base.t.sol";
 import {StreamVaultERCWrapper} from "../../src/ERC4626Wrapper.sol";
 import {IStreamVault} from "../../src/interfaces/IStreamVault.sol";
 import {Vault} from "../../src/lib/Vault.sol";
+import {ShareMath} from "../../src/lib/ShareMath.sol";
 
 contract StreamVaultERCWrapperTest is Base {
     StreamVaultERCWrapper public wrapper;
 
-    function setUp() public {
+    function setUp() public override {
+        super.setUp();
         wrapper = new StreamVaultERCWrapper(address(streamVault));
     }
 
@@ -30,6 +32,9 @@ contract StreamVaultERCWrapperTest is Base {
     function test_PreviewRedeemReturnsCorrectAmount(uint104 _amount) public {
         vm.assume(_amount >= minSupply && _amount <= startingBal);
         stakeAssets(depositor1, depositor1, _amount);
+
+        // Roll the round so shares are minted and price is set
+        rollRound(0, true);
 
         (Vault.VaultParams memory params, Vault.VaultState memory state) = getVaultData();
         uint256 expectedAssets = ShareMath.sharesToAsset(
@@ -68,9 +73,19 @@ contract StreamVaultERCWrapperTest is Base {
      ***********************************************/
 
     function getVaultData() internal view returns (Vault.VaultParams memory, Vault.VaultState memory) {
+        (uint8 decimals, uint56 minimumSupply, uint104 cap) = streamVault.vaultParams();
+        (uint16 round, uint128 totalPending) = streamVault.vaultState();
+
         return (
-            streamVault.vaultParams(),
-            streamVault.vaultState()
+            Vault.VaultParams({
+                decimals: decimals,
+                minimumSupply: minimumSupply,
+                cap: cap
+            }),
+            Vault.VaultState({
+                round: round,
+                totalPending: totalPending
+            })
         );
     }
 }

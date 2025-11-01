@@ -50,7 +50,12 @@ contract StreamVaultERCWrapper {
         Vault.VaultParams memory vaultParams = IStreamVault(vaultContract).vaultParams();
         Vault.VaultState memory vaultState = IStreamVault(vaultContract).vaultState();
 
-        // round is already > 2
+        // Cannot preview redeem if vault hasn't completed at least one round
+        // In round 1, no shares have been minted yet
+        if (vaultState.round < 2) {
+            return 0;
+        }
+
         uint256 pricePerShare = IStreamVault(vaultContract).roundPricePerShare(vaultState.round - 1);
 
         return ShareMath.sharesToAsset(

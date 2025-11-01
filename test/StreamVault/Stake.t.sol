@@ -60,7 +60,7 @@ contract StreamVaultStakeTest is Base {
         assertEq(stableWrapper.totalSupply(), _amount);
         assertEq(stableWrapper.balanceOf(depositor1), 0);
         assertEq(usdc.balanceOf(address(stableWrapper)), _amount);
-        assertEq(streamVault.omniTotalSupply(), _amount);
+        assertEq(streamVault.totalSupply(), _amount);
         assertEq(streamVault.balanceOf(address(streamVault)), _amount);
 
         assertVaultState(2, 0);
@@ -85,7 +85,7 @@ contract StreamVaultStakeTest is Base {
         assertEq(streamVault.balanceOf(depositor1), _amount);
         assertEq(stableWrapper.balanceOf(address(streamVault)), _amount);
         assertEq(usdc.balanceOf(address(stableWrapper)), _amount);
-        assertEq(streamVault.omniTotalSupply(), _amount);
+        assertEq(streamVault.totalSupply(), _amount);
         assertEq(streamVault.balanceOf(address(streamVault)), 0);
 
         assertVaultState(2, 0);
@@ -110,7 +110,7 @@ contract StreamVaultStakeTest is Base {
         assertEq(streamVault.balanceOf(depositor1), _amount - 1);
         assertEq(stableWrapper.balanceOf(address(streamVault)), _amount);
         assertEq(usdc.balanceOf(address(stableWrapper)), _amount);
-        assertEq(streamVault.omniTotalSupply(), _amount);
+        assertEq(streamVault.totalSupply(), _amount);
         assertEq(streamVault.balanceOf(address(streamVault)), 1);
 
         assertVaultState(2, 0);

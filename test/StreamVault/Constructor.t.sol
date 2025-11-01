@@ -12,7 +12,6 @@ contract StreamVaultConstructorTest is Base {
         assertEq(streamVault.symbol(), "syUSDC");
         assertEq(streamVault.decimals(), 6);
         assertEq(streamVault.totalSupply(), 0);
-        assertEq(address(streamVault.endpoint()), address(endpoints[1]));
         assertEq(streamVault.owner(), owner);
         assertEq(streamVault.stableWrapper(), address(stableWrapper));
         verifyVaultState(Vault.VaultState(uint16(1), uint128(0)));

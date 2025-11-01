@@ -6,9 +6,8 @@ import {StreamVault} from "../../src/StreamVault.sol";
 import {StableWrapper} from "../../src/StableWrapper.sol";
 import {Vault} from "../../src/lib/Vault.sol";
 import {MockERC20} from "../../mocks/MockERC20.sol";
-import {TestHelperOz5} from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
 
-contract Base is TestHelperOz5 {
+contract Base is Test {
     // contract
     StreamVault streamVault;
     StableWrapper stableWrapper;
@@ -34,20 +33,13 @@ contract Base is TestHelperOz5 {
     address keeper2;
     address owner;
 
-    // layerzero
-    uint32 private aEid = 1;
-    uint32 private bEid = 2;
-    address lzDelegate;
-
     // helper
     uint8 decimals = 6;
     uint256 startingBal = 10000 * (10 ** 6);
     uint104 cap = 10 ** 24;
     uint56 minSupply = 10 ** 3;
 
-    function setUp() public virtual override {
-        super.setUp();
-        setUpEndpoints(2, LibraryType.UltraLightNode);
+    function setUp() public virtual {
         depositor1 = vm.addr(1);
         depositor2 = vm.addr(2);
         depositor3 = vm.addr(3);
@@ -76,9 +68,6 @@ contract Base is TestHelperOz5 {
         keeper2 = vm.addr(12);
         owner = vm.addr(13);
 
-        // lzEndpoint = vm.addr(14);
-        lzDelegate = vm.addr(15);
-
         usdc = new MockERC20("USD Coin", "USDC");
 
         vm.startPrank(owner);
@@ -87,9 +76,7 @@ contract Base is TestHelperOz5 {
             "Wrapped USD Coin",
             "wUSDC",
             decimals,
-            keeper,
-            address(endpoints[aEid]),
-            lzDelegate
+            keeper
         );
 
         Vault.VaultParams memory vaultParams = Vault.VaultParams({
@@ -102,8 +89,6 @@ contract Base is TestHelperOz5 {
             "Stream Yield Bearing USDC",
             "syUSDC",
             address(stableWrapper),
-            address(endpoints[aEid]),
-            lzDelegate,
             vaultParams
         );
 
@@ -132,12 +117,10 @@ contract Base is TestHelperOz5 {
         assertEq(streamVault.symbol(), "syUSDC");
         assertEq(streamVault.decimals(), 6);
         assertEq(streamVault.totalSupply(), 0);
-        assertEq(address(streamVault.endpoint()), address(endpoints[1]));
         assertEq(streamVault.owner(), owner);
         assertEq(streamVault.stableWrapper(), address(stableWrapper));
         verifyVaultState(Vault.VaultState(uint16(1), uint128(0)));
         assertEq(stableWrapper.balanceOf(address(streamVault)), 0);
-        assertEq(streamVault.omniTotalSupply(), 0);
     }
 
     function assertVaultState(uint16 round, uint128 totalPending) public {
@@ -217,7 +200,6 @@ contract Base is TestHelperOz5 {
     function assertOneRollBaseState(uint104 _amount, uint16 _round) public {
         assertEq(streamVault.totalSupply(), uint256(_amount));
         assertEq(streamVault.balanceOf(address(streamVault)), uint256(_amount));
-        assertEq(streamVault.omniTotalSupply(), uint256(_amount));
         verifyVaultState(Vault.VaultState(_round, uint128(0)));
     }
 

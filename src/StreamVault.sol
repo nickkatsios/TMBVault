@@ -3,15 +3,12 @@ pragma solidity ^0.8.20;
 
 import {ShareMath} from "./lib/ShareMath.sol";
 import {Vault} from "./lib/Vault.sol";
-import {IWETH} from "./interfaces/IWETH.sol";
 import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {ERC20} from "@openzeppelin/contracts/token/ERC20/ERC20.sol";
-import {ReentrancyGuard} from "./ReentrancyGuard.sol";
+import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import {IStableWrapper} from "./interfaces/IStableWrapper.sol";
-import {OFT} from "./layerzero/OFT.sol";
-import {SendParam, MessagingFee, MessagingReceipt, OFTReceipt} from "@layerzerolabs/oft-evm/contracts/interfaces/IOFT.sol";
 
 /**
  * @title StreamVault
@@ -19,7 +16,7 @@ import {SendParam, MessagingFee, MessagingReceipt, OFTReceipt} from "@layerzerol
  * @notice Users receive shares for their stakes, which can be redeemed for assets
  * @notice The rounds will be rolled over on a weekly basis
  */
-contract StreamVault is ReentrancyGuard, OFT {
+contract StreamVault is ReentrancyGuard, ERC20, Ownable {
     using SafeERC20 for IERC20;
     using ShareMath for Vault.StakeReceipt;
 
@@ -49,8 +46,6 @@ contract StreamVault is ReentrancyGuard, OFT {
     /// @notice address of the stable wrapper contract
     address public stableWrapper;
 
-    /// @notice the total supply of shares across all chains
-    uint256 public omniTotalSupply;
 
     /// @notice Whether the vault allows independence from the stable wrapper
     bool public allowIndependence;
@@ -123,26 +118,16 @@ contract StreamVault is ReentrancyGuard, OFT {
      * @param _tokenName is the token name of the share ERC-20
      * @param _tokenSymbol is the token symbol of the share ERC-20
      * @param _stableWrapper is the address of the stable wrapper contract
-     * @param _lzEndpoint is the address of the LayerZero endpoint
-     * @param _delegate is the address of the delegate
      * @param _vaultParams is the `VaultParams` struct with general vault data
      */
     constructor(
         string memory _tokenName,
         string memory _tokenSymbol,
         address _stableWrapper,
-        address _lzEndpoint,
-        address _delegate,
         Vault.VaultParams memory _vaultParams
     )
-        ReentrancyGuard()
-        OFT(
-            _tokenName,
-            _tokenSymbol,
-            _vaultParams.decimals,
-            _lzEndpoint,
-            _delegate
-        )
+        ERC20(_tokenName, _tokenSymbol)
+        Ownable(msg.sender)
     {
         if (_vaultParams.cap == 0) revert CapMustBeGreaterThanZero();
         if (_stableWrapper == address(0)) revert AddressMustBeNonZero();
@@ -172,23 +157,6 @@ contract StreamVault is ReentrancyGuard, OFT {
 
         // Then stake the wrapped tokens
         _stakeInternal(amount, creditor);
-    }
-
-    /**
-     * @notice Deposits ETH and stakes them in a single transaction
-     * @param creditor Address of the creditor to stake to
-     */
-    function depositETHAndStake(
-        address creditor
-    ) external payable nonReentrant {
-        if (creditor == address(0)) revert AddressMustBeNonZero();
-        
-        IStableWrapper(stableWrapper).depositETHToVault{value: msg.value}(msg.sender);
-        
-        totalStaked = totalStaked + msg.value;
-        
-        // Then stake the wrapped tokens
-        _stakeInternal(uint104(msg.value), creditor);
     }
 
     /**
@@ -226,21 +194,6 @@ contract StreamVault is ReentrancyGuard, OFT {
             msg.sender,
             uint224(amount)
         );
-    }
-
-    function bridgeWithRedeem(
-        SendParam calldata sendParam,
-        MessagingFee calldata fee,
-        address payable refundAddress
-    ) external payable returns (MessagingReceipt memory, OFTReceipt memory) {
-        // First redeem any shares if needed
-        Vault.StakeReceipt memory stakeReceipt = stakeReceipts[msg.sender];
-        if (stakeReceipt.amount > 0 || stakeReceipt.unredeemedShares > 0) {
-            _redeem(0);
-        }
-
-        // Then call the internal _send
-        return _send(sendParam, fee, refundAddress);
     }
 
     // #############################################
@@ -416,8 +369,6 @@ contract StreamVault is ReentrancyGuard, OFT {
 
         _burn(msg.sender, numShares);
 
-        omniTotalSupply = omniTotalSupply - numShares;
-
         IERC20(stableWrapper).safeTransfer(to, withdrawAmount);
         totalStaked = totalStaked - withdrawAmount;
         return withdrawAmount;
@@ -515,7 +466,7 @@ contract StreamVault is ReentrancyGuard, OFT {
         uint256 currentRound = state.round;
 
         uint256 newPricePerShare = ShareMath.pricePerShare(
-            omniTotalSupply,
+            totalSupply(),
             currentBalance,
             state.totalPending,
             _vaultParams.decimals
@@ -533,8 +484,6 @@ contract StreamVault is ReentrancyGuard, OFT {
         );
 
         _mint(address(this), mintShares);
-
-        omniTotalSupply = omniTotalSupply + mintShares;
 
         if (currentBalance > balance) {
             IStableWrapper(stableWrapper).permissionedMint(
@@ -718,21 +667,4 @@ contract StreamVault is ReentrancyGuard, OFT {
         IERC20(_token).safeTransfer(msg.sender, amount);
     }
 
-    /**
-     * @notice Rescues ETH stuck in the contract
-     * @param amount The amount of ETH to rescue
-     * @dev Only callable by owner
-     */
-    function rescueETH(uint256 amount) external onlyOwner {
-        if (amount == 0) revert AmountMustBeGreaterThanZero();
-        if (amount > address(this).balance) revert InsufficientWithdrawal();
-
-        (bool success, ) = msg.sender.call{value: amount}("");
-        if (!success) revert TransferFailed();
-    }
-
-    /**
-     * @notice Allows the contract to receive ETH
-     */
-    receive() external payable {}
 }

@@ -5,7 +5,6 @@ import {Script} from "forge-std/Script.sol";
 import {StableWrapper} from "../src/StableWrapper.sol";
 import {console2} from "forge-std/console2.sol";
 import {StreamVault} from "../src/StreamVault.sol";
-import {TestToken} from "../src/TestToken.sol";
 import {Vault} from "../src/lib/Vault.sol";
 
 contract DeployScript is Script {
@@ -16,38 +15,27 @@ contract DeployScript is Script {
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
         address deployer = vm.addr(deployerPrivateKey);
 
+        // Asset
+        address asset = 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913; 
+        string memory name = "Grizzly USD"; 
+        string memory symbol = "grzUSD";
+        uint8 underlyingDecimals = 6;
+        address keeper = deployer;
+
         // Start broadcasting transactions
         vm.startBroadcast(deployerPrivateKey);
 
         //
-        // Deploy TestToken
-        //
-
-        // TestToken testToken = new TestToken(
-        //     "Test USD", 
-        //     "tUSD",
-        //     6  // Same decimals as USDC/USDT
-        // );
-        // console2.log("Test Token deployed to:", address(testToken));
-
-        // Mint some initial tokens for testing
-        // testToken.mint(deployer, 1000000 * 10**6); // Mint 1M tokens
-
-        //
         // Deploy StableWrapper
         //
-
-        address lzEndpoint = 0x1a44076050125825900e736c501f859c50fE728c; // Eth LZ Endpoint
+        console2.log("Deploying StableWrapper...");
         StableWrapper wrapper = new StableWrapper(
-            0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599,
-            "Stream BTC", 
-            "streamBTC",
-            8, // decimals
-            deployer, // keeper
-            lzEndpoint,
-            deployer // delegate
+            asset,
+            name,
+            symbol,
+            underlyingDecimals,
+            keeper
         );
-
         console2.log("StableWrapper deployed to:", address(wrapper));
 
         //
@@ -59,13 +47,12 @@ contract DeployScript is Script {
             minimumSupply: 1 * 10**4 // 0.05 BTC minimum
         });
 
+        console2.log("Deploying StreamVault...");
         StreamVault vault = new StreamVault(
-            "Staked Stream BTC",
-            "xBTC",
+            "Staked Grizzly USD", // name
+            "sgrzUSD", // symbol
             address(wrapper), // stableWrapper
-            lzEndpoint,
-            deployer, // delegate
-            vaultParams
+            vaultParams // vaultParams
         );
         console2.log("StreamVault deployed to:", address(vault));
 

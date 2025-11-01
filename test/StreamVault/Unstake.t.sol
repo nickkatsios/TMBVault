@@ -65,7 +65,7 @@ contract StreamVaultUnstakeTest is Base {
         vm.assertEq(stableWrapper.totalSupply(), _amount - _shares);
         vm.assertEq(stableWrapper.balanceOf(depositor1), 0);
         vm.assertEq(usdc.balanceOf(address(stableWrapper)), _amount);
-        vm.assertEq(streamVault.omniTotalSupply(), _amount - _shares);
+        vm.assertEq(streamVault.totalSupply(), _amount - _shares);
         assertVaultState(2, 0);
     }
 
@@ -91,7 +91,7 @@ contract StreamVaultUnstakeTest is Base {
         vm.assertEq(stableWrapper.totalSupply(), _amount - _shares);
         vm.assertEq(stableWrapper.balanceOf(depositor1), 0);
         vm.assertEq(usdc.balanceOf(address(stableWrapper)), _amount);
-        vm.assertEq(streamVault.omniTotalSupply(), _amount - _shares);
+        vm.assertEq(streamVault.totalSupply(), _amount - _shares);
         assertVaultState(2, 0);
     }
 
@@ -117,7 +117,7 @@ contract StreamVaultUnstakeTest is Base {
         vm.assertEq(stableWrapper.totalSupply(), _amount - _shares);
         vm.assertEq(stableWrapper.balanceOf(depositor1), 0);
         vm.assertEq(usdc.balanceOf(address(stableWrapper)), _amount);
-        vm.assertEq(streamVault.omniTotalSupply(), _amount - _shares);
+        vm.assertEq(streamVault.totalSupply(), _amount - _shares);
         assertVaultState(2, 0);
     }
 
@@ -151,7 +151,7 @@ contract StreamVaultUnstakeTest is Base {
         vm.assertEq(stableWrapper.totalSupply(), _amount);
         vm.assertEq(stableWrapper.balanceOf(depositor1), _shares);
         vm.assertEq(usdc.balanceOf(address(stableWrapper)), _amount);
-        vm.assertEq(streamVault.omniTotalSupply(), _amount - _shares);
+        vm.assertEq(streamVault.totalSupply(), _amount - _shares);
         assertVaultState(2, 0);
     }
 }

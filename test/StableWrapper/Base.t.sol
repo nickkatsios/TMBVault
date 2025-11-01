@@ -4,9 +4,8 @@ pragma solidity ^0.8.20;
 import "forge-std/Test.sol";
 import {StableWrapper} from "../../src/StableWrapper.sol";
 import {MockERC20} from "../../mocks/MockERC20.sol";
-import {TestHelperOz5} from "@layerzerolabs/test-devtools-evm-foundry/contracts/TestHelperOz5.sol";
 
-contract Base is TestHelperOz5 {
+contract Base is Test {
     // contract
     StableWrapper stableWrapper;
 
@@ -31,18 +30,11 @@ contract Base is TestHelperOz5 {
     address keeper2;
     address owner;
 
-    // layerzero
-    uint32 private aEid = 1;
-    uint32 private bEid = 2;
-    address lzDelegate;
-
     // helper
     uint8 decimals = 6;
     uint256 startingBal = 10000 * (10 ** 6);
 
-    function setUp() public virtual override {
-        super.setUp();
-        setUpEndpoints(2, LibraryType.UltraLightNode);
+    function setUp() public virtual {
         depositor1 = vm.addr(1);
         depositor2 = vm.addr(2);
         depositor3 = vm.addr(3);
@@ -71,9 +63,6 @@ contract Base is TestHelperOz5 {
         keeper2 = vm.addr(12);
         owner = vm.addr(13);
 
-        // lzEndpoint = vm.addr(14);
-        lzDelegate = vm.addr(15);
-
         usdc = new MockERC20("USD Coin", "USDC");
 
         vm.startPrank(owner);
@@ -82,9 +71,7 @@ contract Base is TestHelperOz5 {
             "Wrapped USD Coin",
             "wUSDC",
             decimals,
-            keeper,
-            address(endpoints[aEid]),
-            lzDelegate
+            keeper
         );
         vm.stopPrank();
 
