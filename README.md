@@ -4,7 +4,7 @@
 
 ### Contract Deployments
 
-#### Arbitrum
+#### Base
 - StreamVault: `0x...`
 - StableWrapper: `0x...`
 
