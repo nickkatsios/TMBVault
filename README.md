@@ -1,4 +1,4 @@
-<h1 align="center"> TMBVault V2 </h1>
+<h1 align="center"> TMBVault (Trust me bro Vault) </h1>
 
 ## Deployments
 
